@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'customapi';
+$plugin->component = 'smsgateway_customapi';
 $plugin->version = 2025070800;
 $plugin->requires = 2022112800; // Requires Moodle 4.1+ for core_form\dynamic_form
 $plugin->maturity = MATURITY_BETA;
