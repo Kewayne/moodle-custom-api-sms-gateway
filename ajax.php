@@ -14,10 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use smsgateway_customapi\gateway;
-
-require_once(__DIR__ . '/../../../config.php');
-
 /**
  * AJAX handler for testing the Custom API SMS Gateway.
  *
@@ -25,6 +21,12 @@ require_once(__DIR__ . '/../../../config.php');
  * @copyright   2024 Kewayne Davidson
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+use smsgateway_customapi\gateway;
+
+require_once(__DIR__ . '/../../../config.php');
+
+// AJAX handler for testing the Custom API SMS Gateway.
 
 require_login();
 require_sesskey();

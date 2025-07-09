@@ -42,54 +42,80 @@ class hook_listener {
         $gatewayid = optional_param('id', 0, PARAM_INT);
 
         // API Settings.
-        $mform->addElement('header', 'api_settings_header', get_string('api_settings', 'smsgateway_customapi'));
-        $mform->addElement('text', 'api_url', get_string('api_url', 'smsgateway_customapi'), ['size' => 60]);
+        $mform->addElement('header', 'api_settings_header',
+            get_string('api_settings', 'smsgateway_customapi'));
+        $mform->addElement('text', 'api_url',
+            get_string('api_url', 'smsgateway_customapi'), ['size' => 60]);
         $mform->setType('api_url', PARAM_URL);
         $mform->addRule('api_url', null, 'required');
-        $mform->addElement('static', 'api_url_desc', '', get_string('api_url_desc', 'smsgateway_customapi'));
+        $mform->addElement('static', 'api_url_desc', '',
+            get_string('api_url_desc', 'smsgateway_customapi'));
 
-        $mform->addElement('select', 'request_type', get_string('request_type', 'smsgateway_customapi'), [
-            'GET' => get_string('request_type_get', 'smsgateway_customapi'),
-            'POST' => get_string('request_type_post', 'smsgateway_customapi'),
-        ]);
-        $mform->addElement('static', 'request_type_desc', '', get_string('request_type_desc', 'smsgateway_customapi'));
+        $mform->addElement('select', 'request_type',
+            get_string('request_type', 'smsgateway_customapi'), [
+                'GET' => get_string('request_type_get', 'smsgateway_customapi'),
+                'POST' => get_string('request_type_post', 'smsgateway_customapi'),
+            ]);
+        $mform->addElement('static', 'request_type_desc', '',
+            get_string('request_type_desc', 'smsgateway_customapi'));
 
         // Parameters.
-        $mform->addElement('header', 'parameters_settings_header', get_string('parameters_settings', 'smsgateway_customapi'));
-        $mform->addElement('static', 'placeholders_info', get_string('placeholders', 'smsgateway_customapi'), get_string('placeholders_desc', 'smsgateway_customapi'));
+        $mform->addElement('header', 'parameters_settings_header',
+            get_string('parameters_settings', 'smsgateway_customapi'));
+        $mform->addElement('static', 'placeholders_info',
+            get_string('placeholders', 'smsgateway_customapi'),
+            get_string('placeholders_desc', 'smsgateway_customapi'));
 
-        $mform->addElement('textarea', 'headers', get_string('headers', 'smsgateway_customapi'), 'wrap="virtual" rows="5" cols="60"');
+        $mform->addElement('textarea', 'headers',
+            get_string('headers', 'smsgateway_customapi'),
+            'wrap="virtual" rows="5" cols="60"');
         $mform->setType('headers', PARAM_TEXT);
-        $mform->addElement('static', 'headers_desc', '', get_string('headers_desc', 'smsgateway_customapi'));
+        $mform->addElement('static', 'headers_desc', '',
+            get_string('headers_desc', 'smsgateway_customapi'));
 
-        $mform->addElement('textarea', 'query_parameters', get_string('query_parameters', 'smsgateway_customapi'), 'wrap="virtual" rows="5" cols="60"');
+        $mform->addElement('textarea', 'query_parameters',
+            get_string('query_parameters', 'smsgateway_customapi'),
+            'wrap="virtual" rows="5" cols="60"');
         $mform->setType('query_parameters', PARAM_TEXT);
-        $mform->addElement('static', 'query_parameters_desc', '', get_string('query_parameters_desc', 'smsgateway_customapi'));
+        $mform->addElement('static', 'query_parameters_desc', '',
+            get_string('query_parameters_desc', 'smsgateway_customapi'));
 
-        $mform->addElement('textarea', 'post_body_parameters', get_string('post_body_parameters', 'smsgateway_customapi'), 'wrap="virtual" rows="5" cols="60"');
+        $mform->addElement('textarea', 'post_body_parameters',
+            get_string('post_body_parameters', 'smsgateway_customapi'),
+            'wrap="virtual" rows="5" cols="60"');
         $mform->setType('post_body_parameters', PARAM_TEXT);
-        $mform->addElement('static', 'post_body_parameters_desc', '', get_string('post_body_parameters_desc', 'smsgateway_customapi'));
+        $mform->addElement('static', 'post_body_parameters_desc', '',
+            get_string('post_body_parameters_desc', 'smsgateway_customapi'));
         $mform->hideIf('post_body_parameters', 'request_type', 'eq', 'GET');
         $mform->hideIf('post_body_parameters_desc', 'request_type', 'eq', 'GET');
 
         // Response Handling.
-        $mform->addElement('header', 'response_settings_header', get_string('response_settings', 'smsgateway_customapi'));
-        $mform->addElement('text', 'success_condition', get_string('success_condition', 'smsgateway_customapi'), ['size' => 60]);
+        $mform->addElement('header', 'response_settings_header',
+            get_string('response_settings', 'smsgateway_customapi'));
+        $mform->addElement('text', 'success_condition',
+            get_string('success_condition', 'smsgateway_customapi'), ['size' => 60]);
         $mform->setType('success_condition', PARAM_TEXT);
-        $mform->addElement('static', 'success_condition_desc', '', get_string('success_condition_desc', 'smsgateway_customapi'));
+        $mform->addElement('static', 'success_condition_desc', '',
+            get_string('success_condition_desc', 'smsgateway_customapi'));
 
         // Test Settings.
         if ($gatewayid) {
-            $mform->addElement('header', 'test_settings_header', get_string('test_settings', 'smsgateway_customapi'));
-            $mform->addElement('static', 'test_info', '', get_string('test_settings_desc', 'smsgateway_customapi'));
-            $mform->addElement('text', 'test_recipient', get_string('test_recipient', 'smsgateway_customapi'), ['size' => 30]);
+            $mform->addElement('header', 'test_settings_header',
+                get_string('test_settings', 'smsgateway_customapi'));
+            $mform->addElement('static', 'test_info', '',
+                get_string('test_settings_desc', 'smsgateway_customapi'));
+            $mform->addElement('text', 'test_recipient',
+                get_string('test_recipient', 'smsgateway_customapi'), ['size' => 30]);
             $mform->setType('test_recipient', PARAM_TEXT);
-            $mform->addElement('text', 'test_message', get_string('test_message', 'smsgateway_customapi'), ['size' => 60]);
+            $mform->addElement('text', 'test_message',
+                get_string('test_message', 'smsgateway_customapi'), ['size' => 60]);
             $mform->setDefault('test_message', 'This is a test message from Moodle.');
             $mform->setType('test_message', PARAM_TEXT);
 
             $mform->addElement('html', '<div id="customapi-test-response-container" class="mt-2"></div>');
-            $mform->addElement('button', 'test_button', get_string('test_button', 'smsgateway_customapi'), ['id' => 'customapi-test-button']);
+            $mform->addElement('button', 'test_button',
+                get_string('test_button', 'smsgateway_customapi'),
+                ['id' => 'customapi-test-button']);
 
             // JavaScript for test button functionality.
             global $PAGE;
