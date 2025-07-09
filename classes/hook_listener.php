@@ -6,7 +6,7 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// Moodle is distributed in the hope it will be useful,
+// Moodle is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
@@ -18,7 +18,20 @@ namespace smsgateway_customapi;
 
 use core_sms\hook\after_sms_gateway_form_hook;
 
+/**
+ * Hook listener for adding Custom API SMS gateway form elements.
+ *
+ * @package     smsgateway_customapi
+ * @copyright   2024 Kewayne Davidson
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class hook_listener {
+
+    /**
+     * Adds additional form elements for the Custom API SMS gateway.
+     *
+     * @param after_sms_gateway_form_hook $hook The form hook object.
+     */
     public static function set_form_definition_for_customapi_sms_gateway(after_sms_gateway_form_hook $hook): void {
         if ($hook->plugin !== 'smsgateway_customapi') {
             return;
@@ -82,7 +95,7 @@ class hook_listener {
             global $PAGE;
             $testurl = new \moodle_url("/sms/gateway/customapi/ajax.php", ['sesskey' => sesskey()]);
 
-            $js = "
+            $js = <<<JS
 M.util.js_pending('customapi-test-init');
 
 require(['jquery', 'core/notification', 'core/ajax'], function($, notification, ajax) {
@@ -119,17 +132,15 @@ require(['jquery', 'core/notification', 'core/ajax'], function($, notification, 
             var container = $('#customapi-test-response-container');
             var output = '<h4>Status Code: ' + $('<div/>').text(response.statuscode).html() + '</h4>';
             output += '<h4>Request Data Sent:</h4><pre>' + $('<div/>').text(JSON.stringify(postData, null, 2)).html() + '</pre>';
-            // Check if response.response is an object and stringify it for display
-            var apiResponseContent = (typeof response.response === 'object' && response.response !== null) ?
-                                     JSON.stringify(response.response, null, 2) :
-                                     response.response;
+            var apiResponseContent = (typeof response.response === 'object' && response.response !== null)
+                ? JSON.stringify(response.response, null, 2)
+                : response.response;
             output += '<h4>API Response:</h4><pre>' + $('<div/>').text(apiResponseContent).html() + '</pre>';
 
-
             if (response.success) {
-                notification.add('" . get_string('test_success', 'smsgateway_customapi') . "', 'success');
+                notification.add(M.util.get_string('test_success', 'smsgateway_customapi'), 'success');
             } else {
-                notification.add('" . get_string('test_failed', 'smsgateway_customapi') . "', 'error');
+                notification.add(M.util.get_string('test_failed', 'smsgateway_customapi'), 'error');
             }
             container.html(output);
         })
@@ -142,7 +153,7 @@ require(['jquery', 'core/notification', 'core/ajax'], function($, notification, 
         });
     });
 });
-";
+JS;
             $PAGE->requires->js_init_code($js, true);
         }
     }
