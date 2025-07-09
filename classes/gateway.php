@@ -33,26 +33,61 @@ class gateway extends \core_sms\gateway {
 
     /**
      * Sends a message using the configured custom API settings.
+     * This method's signature MUST match the parent class.
      *
      * @param message $message The message object to send.
-     * @param bool $istest If this is a test call.
-     * @return message|array The updated message object or an array with test results.
+     * @return message The updated message object.
      */
-    public function send(message $message, bool $istest = false) {
-        $recipientnumber = manager::format_number(
-            phonenumber: $message->recipientnumber,
+    public function send(message $message): message {
+        $result = $this->send_request($message->recipientnumber, $message->content);
+
+        return $message->with(
+            status: $result['success'] ? message_status::GATEWAY_SENT : message_status::GATEWAY_FAILED,
+        );
+    }
+
+    /**
+     * Performs a test request using the gateway settings.
+     * This is called by the AJAX script for the test button.
+     *
+     * @param string $recipient The recipient number for the test.
+     * @param string $content The message content for the test.
+     * @return array An array with test results.
+     */
+    public function test_connection(string $recipient, string $content): array {
+        return $this->send_request($recipient, $content);
+    }
+
+    /**
+     * The core logic for building and sending the API request.
+     *
+     * @param string $recipientnumber The recipient's phone number.
+     * @param string $content The message content.
+     * @return array A result array with 'success', 'statuscode', and 'response'.
+     */
+    private function send_request(string $recipientnumber, string $content): array {
+        $apiurl = $this->config->api_url ?? '';
+        if (empty($apiurl)) {
+            return ['success' => false, 'statuscode' => 0, 'response' => 'API URL is not configured.'];
+        }
+
+        $formattedrecipient = manager::format_number(
+            phonenumber: $recipientnumber,
             countrycode: $this->config->countrycode ?? null,
         );
-        $recipientnumber = preg_replace('/[^\d]/', '', $recipientnumber);
+        $formattedrecipient = preg_replace('/[^\d]/', '', $formattedrecipient);
 
         // Replace placeholders.
         $replacements = [
-            '{{recipient}}' => $recipientnumber,
-            '{{message}}' => $message->content,
+            '{{recipient}}' => $formattedrecipient,
+            '{{message}}' => $content,
         ];
 
         // Prepare options for the HTTP client.
-        $options = [];
+        $options = [
+            'connect_timeout' => 5, // 5 second timeout.
+            'timeout' => 10,
+        ];
 
         // 1. Headers.
         $options['headers'] = $this->parse_key_value_pairs($this->config->headers ?? '', $replacements, ':');
@@ -72,9 +107,9 @@ class gateway extends \core_sms\gateway {
 
         try {
             if (($this->config->request_type ?? 'GET') === 'POST') {
-                $response = $client->post($this->config->api_url, $options);
+                $response = $client->post($apiurl, $options);
             } else {
-                $response = $client->get($this->config->api_url, $options);
+                $response = $client->get($apiurl, $options);
             }
 
             $responsebody = $response->getBody()->getContents();
@@ -83,7 +118,7 @@ class gateway extends \core_sms\gateway {
             // Check for success.
             $successcondition = trim($this->config->success_condition ?? '');
             if ($statuscode >= 200 && $statuscode < 300) {
-                if (empty($successcondition) || strpos($responsebody, $successcondition) !== false) {
+                if (empty($successcondition) || str_contains($responsebody, $successcondition)) {
                     $success = true;
                 }
             }
@@ -94,20 +129,15 @@ class gateway extends \core_sms\gateway {
         } catch (GuzzleException $e) {
             $success = false;
             $responsebody = 'GuzzleException: ' . $e->getMessage();
+            $statuscode = $e->getCode();
             debugging("CustomAPI exception: " . $e->getMessage(), DEBUG_DEVELOPER);
         }
 
-        if ($istest) {
-            return [
-                'success' => $success,
-                'statuscode' => $statuscode,
-                'response' => $responsebody,
-            ];
-        }
-
-        return $message->with(
-            status: $success ? message_status::GATEWAY_SENT : message_status::GATEWAY_FAILED,
-        );
+        return [
+            'success' => $success,
+            'statuscode' => $statuscode,
+            'response' => $responsebody,
+        ];
     }
 
     /**

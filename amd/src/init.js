@@ -5,6 +5,7 @@ define(['jquery', 'core/ajax', 'core/notification'], function($, ajax, notificat
                 e.preventDefault();
                 var button = $(this);
                 button.prop('disabled', true);
+                $('#customapi-test-response-container').html('Testing...');
 
                 var config = {
                     api_url: $('#id_api_url').val(),
@@ -15,31 +16,31 @@ define(['jquery', 'core/ajax', 'core/notification'], function($, ajax, notificat
                     success_condition: $('#id_success_condition').val()
                 };
 
-                var promises = ajax.call([{
-                    methodname: 'smsgateway_customapi_test',
-                    args: {
-                        url: testUrl,
-                        recipient: $('#id_test_recipient').val(),
-                        message: $('#id_test_message').val(),
-                        config: JSON.stringify(config)
-                    },
-                    done: function(response) {
-                        var container = $('#customapi-test-response-container');
-                        var result = JSON.parse(response);
-                        var output = '<h4>' + result.statuscode + '</h4>';
-                        output += '<pre>' + $('<div/>').text(result.response).html() + '</pre>';
+                var postData = {
+                    recipient: $('#id_test_recipient').val(),
+                    message: $('#id_test_message').val(),
+                    config: JSON.stringify(config)
+                };
 
-                        if (result.success) {
-                            notification.add(M.util.get_string('test_success', 'smsgateway_customapi'), 'success');
-                        } else {
-                            notification.add(M.util.get_string('test_failed', 'smsgateway_customapi'), 'error');
-                        }
-                        container.html(output);
-                    },
-                    fail: notification.exception
-                }]);
+                // Use core/ajax to make a POST request to our custom ajax.php script.
+                var promise = ajax.post(testUrl, postData);
 
-                promises[0].always(function() {
+                promise.done(function(response) {
+                    var container = $('#customapi-test-response-container');
+                    // Sanitize the output to prevent XSS from the API response.
+                    var output = '<h4>Status Code: ' + $('<div/>').text(response.statuscode).html() + '</h4>';
+                    output += '<pre>' + $('<div/>').text(response.response).html() + '</pre>';
+
+                    if (response.success) {
+                        notification.add(M.util.get_string('test_success', 'smsgateway_customapi'), 'success');
+                    } else {
+                        notification.add(M.util.get_string('test_failed', 'smsgateway_customapi'), 'error');
+                    }
+                    container.html(output);
+                }).fail(function(ex) {
+                    $('#customapi-test-response-container').html(''); // Clear loading indicator
+                    notification.exception(ex);
+                }).always(function() {
                     button.prop('disabled', false);
                 });
             });
