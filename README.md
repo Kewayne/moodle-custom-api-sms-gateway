@@ -122,3 +122,10 @@ Your configuration would be:
 ## 6. Disclaimer
 
 This plugin is a connector tool. It does not provide any SMS or messaging services itself. You are responsible for securing an account with a third-party API provider and for any costs associated with their service. Please ensure you handle your API keys and other credentials securely.
+
+## 7. Support This Project
+
+If you find this plugin helpful, consider supporting my work:
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.me/kewayne876)
+
