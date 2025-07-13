@@ -39,7 +39,7 @@ class hook_listener {
 
         $mform = $hook->mform;
         $plugin = $hook->plugin;
-        $gatewayid = optional_param('id', 0, PARAM_INT);
+        // Removed $gatewayid since not needed without test functionality.
 
         // API Settings.
         $mform->addElement('header', 'api_settings_header',
@@ -98,89 +98,6 @@ class hook_listener {
         $mform->addElement('static', 'success_condition_desc', '',
             get_string('success_condition_desc', 'smsgateway_customapi'));
 
-        // Test Settings.
-        if ($gatewayid) {
-            $mform->addElement('header', 'test_settings_header',
-                get_string('test_settings', 'smsgateway_customapi'));
-            $mform->addElement('static', 'test_info', '',
-                get_string('test_settings_desc', 'smsgateway_customapi'));
-            $mform->addElement('text', 'test_recipient',
-                get_string('test_recipient', 'smsgateway_customapi'), ['size' => 30]);
-            $mform->setType('test_recipient', PARAM_TEXT);
-            $mform->addElement('text', 'test_message',
-                get_string('test_message', 'smsgateway_customapi'), ['size' => 60]);
-            $mform->setDefault('test_message', 'This is a test message from Moodle.');
-            $mform->setType('test_message', PARAM_TEXT);
-
-            $mform->addElement('html', '<div id="customapi-test-response-container" class="mt-2"></div>');
-            $mform->addElement('button', 'test_button',
-                get_string('test_button', 'smsgateway_customapi'),
-                ['id' => 'customapi-test-button']);
-
-            // JavaScript for test button functionality.
-            global $PAGE;
-            $testurl = new \moodle_url("/sms/gateway/customapi/ajax.php", ['sesskey' => sesskey()]);
-
-            $js = <<<JS
-M.util.js_pending('customapi-test-init');
-
-require(['jquery', 'core/notification', 'core/ajax'], function($, notification, ajax) {
-    $('#customapi-test-button').on('click', function(e) {
-        e.preventDefault();
-
-        var button = $(this);
-        button.prop('disabled', true);
-        $('#customapi-test-response-container').html('<em>Testing...</em>');
-
-        var config = {
-            api_url: $('#id_api_url').val(),
-            request_type: $('#id_request_type').val(),
-            headers: $('#id_headers').val(),
-            query_parameters: $('#id_query_parameters').val(),
-            post_body_parameters: $('#id_post_body_parameters').val(),
-            success_condition: $('#id_success_condition').val()
-        };
-
-        var postData = {
-            id: {$gatewayid},
-            recipient: $('#id_test_recipient').val(),
-            message: $('#id_test_message').val(),
-            config: JSON.stringify(config)
-        };
-
-        $.ajax({
-            url: '{$testurl->out(false)}',
-            method: 'POST',
-            data: postData,
-            dataType: 'json'
-        })
-        .done(function(response) {
-            var container = $('#customapi-test-response-container');
-            var output = '<h4>Status Code: ' + $('<div/>').text(response.statuscode).html() + '</h4>';
-            output += '<h4>Request Data Sent:</h4><pre>' + $('<div/>').text(JSON.stringify(postData, null, 2)).html() + '</pre>';
-            var apiResponseContent = (typeof response.response === 'object' && response.response !== null)
-                ? JSON.stringify(response.response, null, 2)
-                : response.response;
-            output += '<h4>API Response:</h4><pre>' + $('<div/>').text(apiResponseContent).html() + '</pre>';
-
-            if (response.success) {
-                notification.add(M.util.get_string('test_success', 'smsgateway_customapi'), 'success');
-            } else {
-                notification.add(M.util.get_string('test_failed', 'smsgateway_customapi'), 'error');
-            }
-            container.html(output);
-        })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            notification.exception(new Error('AJAX request failed: ' + textStatus + ' - ' + errorThrown));
-        })
-        .always(function() {
-            button.prop('disabled', false);
-            M.util.js_complete('customapi-test-init');
-        });
-    });
-});
-JS;
-            $PAGE->requires->js_init_code($js, true);
-        }
+        // Removed the entire "Test Settings" section and JS.
     }
 }

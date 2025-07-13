@@ -17,27 +17,28 @@
 namespace smsgateway_customapi;
 
 use core\http_client;
+use core_sms\gateway as core_gateway;
 use core_sms\manager;
 use core_sms\message;
 use core_sms\message_status;
 use GuzzleHttp\Exception\GuzzleException;
 
 /**
- * A generic, customizable API gateway for sending SMS.
+ * A generic, configurable API gateway for sending SMS.
  *
- * @package    smsgateway_customapi
- * @copyright  2025 Kewayne Davidson
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     smsgateway_customapi
+ * @copyright   2025 Kewayne Davidson
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class gateway extends \core_sms\gateway {
+class gateway extends core_gateway {
 
     /**
-     * Sends a message using the configured custom API settings.
-     * This method's signature MUST match the parent class.
+     * Sends an SMS message using the configured custom API settings.
      *
      * @param message $message The message object to send.
      * @return message The updated message object.
      */
+    #[\Override]
     public function send(message $message): message {
         $result = $this->send_request($message->recipientnumber, $message->content);
 
@@ -47,23 +48,11 @@ class gateway extends \core_sms\gateway {
     }
 
     /**
-     * Performs a test request using the gateway settings.
-     * This is called by the AJAX script for the test button.
-     *
-     * @param string $recipient The recipient number for the test.
-     * @param string $content The message content for the test.
-     * @return array An array with test results.
-     */
-    public function test_connection(string $recipient, string $content): array {
-        return $this->send_request($recipient, $content);
-    }
-
-    /**
-     * The core logic for building and sending the API request.
+     * Sends an API request with the configured parameters.
      *
      * @param string $recipientnumber The recipient's phone number.
      * @param string $content The message content.
-     * @return array A result array with 'success', 'statuscode', and 'response'.
+     * @return array Result array with keys: success, statuscode, response.
      */
     private function send_request(string $recipientnumber, string $content): array {
         $apiurl = $this->config->api_url ?? '';
@@ -71,51 +60,50 @@ class gateway extends \core_sms\gateway {
             return ['success' => false, 'statuscode' => 0, 'response' => 'API URL is not configured.'];
         }
 
+        // Format and sanitize recipient number.
         $formattedrecipient = manager::format_number(
             phonenumber: $recipientnumber,
             countrycode: $this->config->countrycode ?? null,
         );
         $formattedrecipient = preg_replace('/[^\d]/', '', $formattedrecipient);
 
-        // Replace placeholders.
+        // Placeholder replacements.
         $replacements = [
             '{{recipient}}' => $formattedrecipient,
             '{{message}}' => $content,
         ];
 
-        // Prepare options for the HTTP client.
+        // Build HTTP client options.
         $options = [
-            'connect_timeout' => 5, // 5 second timeout.
+            'connect_timeout' => 5,
             'timeout' => 10,
         ];
 
         // 1. Headers.
         $options['headers'] = $this->parse_key_value_pairs($this->config->headers ?? '', $replacements, ':');
 
-        // 2. Query Parameters (for both GET and POST).
+        // 2. Query parameters (for GET or POST).
         $options['query'] = $this->parse_key_value_pairs($this->config->query_parameters ?? '', $replacements);
 
-        // 3. Body Parameters (for POST only).
+        // 3. POST body.
         if (($this->config->request_type ?? 'GET') === 'POST') {
             $options['form_params'] = $this->parse_key_value_pairs($this->config->post_body_parameters ?? '', $replacements);
         }
 
         $client = \core\di::get(http_client::class);
-        $responsebody = '';
         $statuscode = 0;
+        $responsebody = '';
         $success = false;
 
         try {
-            if (($this->config->request_type ?? 'GET') === 'POST') {
-                $response = $client->post($apiurl, $options);
-            } else {
-                $response = $client->get($apiurl, $options);
-            }
+            $response = ($this->config->request_type ?? 'GET') === 'POST'
+                ? $client->post($apiurl, $options)
+                : $client->get($apiurl, $options);
 
-            $responsebody = $response->getBody()->getContents();
             $statuscode = $response->getStatusCode();
+            $responsebody = $response->getBody()->getContents();
 
-            // Check for success.
+            // Check for expected success condition.
             $successcondition = trim($this->config->success_condition ?? '');
             if ($statuscode >= 200 && $statuscode < 300) {
                 if (empty($successcondition) || str_contains($responsebody, $successcondition)) {
@@ -127,9 +115,8 @@ class gateway extends \core_sms\gateway {
             debugging("CustomAPI response body: $responsebody", DEBUG_DEVELOPER);
 
         } catch (GuzzleException $e) {
-            $success = false;
-            $responsebody = 'GuzzleException: ' . $e->getMessage();
             $statuscode = $e->getCode();
+            $responsebody = 'GuzzleException: ' . $e->getMessage();
             debugging("CustomAPI exception: " . $e->getMessage(), DEBUG_DEVELOPER);
         }
 
@@ -141,33 +128,43 @@ class gateway extends \core_sms\gateway {
     }
 
     /**
-     * Parses multiline key-value pair strings into an associative array.
+     * Parses key-value pairs from multiline text.
      *
-     * @param string $text The text to parse.
-     * @param array $replacements Placeholders to replace.
-     * @param string $separator The separator between key and value.
-     * @return array
+     * @param string $text Key-value lines.
+     * @param array $replacements Placeholder replacements.
+     * @param string $separator Separator between key and value (default =).
+     * @return array Parsed associative array.
      */
     private function parse_key_value_pairs(string $text, array $replacements, string $separator = '='): array {
         $params = [];
         $lines = explode("\n", trim($text));
+
         foreach ($lines as $line) {
             $line = trim($line);
             if (empty($line)) {
                 continue;
             }
+
             $parts = explode($separator, $line, 2);
             if (count($parts) === 2) {
                 $key = trim($parts[0]);
-                $value = str_replace(array_keys($replacements), array_values($replacements), trim($parts[1]));
+                $value = trim($parts[1]);
+                $value = str_replace(array_keys($replacements), array_values($replacements), $value);
                 $params[$key] = $value;
             }
         }
+
         return $params;
     }
 
+    /**
+     * Returns send priority for message dispatch.
+     *
+     * @param message $message The SMS message.
+     * @return int Priority (higher = more preferred).
+     */
     #[\Override]
     public function get_send_priority(message $message): int {
-        return 100; // High priority as it's highly configurable.
+        return 100; // Highest priority for this configurable gateway.
     }
 }

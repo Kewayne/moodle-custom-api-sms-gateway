@@ -43,12 +43,4 @@ $string['request_type_post'] = 'POST';
 $string['response_settings'] = 'Response Handling';
 $string['success_condition'] = 'Success condition';
 $string['success_condition_desc'] = 'A string that must be present in the API response body to consider the message successfully sent. Leave empty to only check for a 2xx HTTP status code.';
-$string['test_button'] = 'Run Test';
-$string['test_failed'] = 'Test failed. Check the response below and your settings.';
-$string['test_message'] = 'Test message';
-$string['test_recipient'] = 'Test recipient number';
-$string['test_response'] = 'Test Response';
-$string['test_response_desc'] = 'The full response from the API will be shown here after running a test.';
-$string['test_settings'] = 'Test Gateway';
-$string['test_settings_desc'] = 'Enter a phone number and message to test your configuration.';
-$string['test_success'] = 'Test successful!';
+
